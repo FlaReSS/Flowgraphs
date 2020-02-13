@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: Flaress Coherency Test
+# Title: FLareSS combined test
 # GNU Radio version: 3.8.0.0
 
 from distutils.version import StrictVersion
@@ -27,7 +27,9 @@ from gnuradio.filter import firdes
 import sip
 from gnuradio import analog
 from gnuradio import blocks
+import pmt
 from gnuradio import channels
+from gnuradio import filter
 from gnuradio import gr
 import sys
 import signal
@@ -36,15 +38,16 @@ from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio.qtgui import Range, RangeWidget
 import ecss
+import flaress
 import math
 from gnuradio import qtgui
 
-class flaress_coherency_test(gr.top_block, Qt.QWidget):
+class flaress_combined_test(gr.top_block, Qt.QWidget):
 
     def __init__(self):
-        gr.top_block.__init__(self, "Flaress Coherency Test")
+        gr.top_block.__init__(self, "FLareSS combined test")
         Qt.QWidget.__init__(self)
-        self.setWindowTitle("Flaress Coherency Test")
+        self.setWindowTitle("FLareSS combined test")
         qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
@@ -62,7 +65,7 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
         self.top_grid_layout = Qt.QGridLayout()
         self.top_layout.addLayout(self.top_grid_layout)
 
-        self.settings = Qt.QSettings("GNU Radio", "flaress_coherency_test")
+        self.settings = Qt.QSettings("GNU Radio", "flaress_combined_test")
 
         try:
             if StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
@@ -75,15 +78,14 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.samp_rate = samp_rate = 320000
+        self.samp_rate = samp_rate = 32000
         self.ss = ss = False
-        self.sps = sps = 32
         self.reset = reset = False
         self.order = order = 2
-        self.noise = noise = 0.0
         self.n_bit = n_bit = 38
-        self.freq_offset = freq_offset = 0.0
+        self.cof = cof = 10.0
         self.coeff = coeff = ecss.variables_loop_filter.coefficients(100, 0.707, 0, 5, 10, 0.707, samp_rate)
+        self.bit_rate = bit_rate = 16000
 
         ##################################################
         # Blocks
@@ -175,13 +177,6 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(0, 1):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self._noise_range = Range(0.0, 10.0, 0.05, 0.0, 50)
-        self._noise_win = RangeWidget(self._noise_range, self.set_noise, 'Noise Channel', "counter_slider", float)
-        self.top_grid_layout.addWidget(self._noise_win, 1, 1, 1, 1)
-        for r in range(1, 2):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(1, 2):
-            self.top_grid_layout.setColumnStretch(c, 1)
         self._n_bit_range = Range(4, 52, 1, 38, 50)
         self._n_bit_win = RangeWidget(self._n_bit_range, self.set_n_bit, 'PLL N bits', "counter_slider", int)
         self.top_grid_layout.addWidget(self._n_bit_win, 1, 0, 1, 1)
@@ -189,117 +184,30 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(0, 1):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self._freq_offset_range = Range(0.0, 10000.0, 100, 0.0, 50)
-        self._freq_offset_win = RangeWidget(self._freq_offset_range, self.set_freq_offset, 'Frequency offset Channel', "counter_slider", float)
-        self.top_grid_layout.addWidget(self._freq_offset_win, 1, 2, 1, 1)
+        self._cof_range = Range(10.0, 10000.0, 100.0, 10.0, 50)
+        self._cof_win = RangeWidget(self._cof_range, self.set_cof, 'LPF cut-off frequency', "counter_slider", float)
+        self.top_grid_layout.addWidget(self._cof_win, 1, 1, 1, 1)
         for r in range(1, 2):
             self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(2, 3):
+        for c in range(1, 2):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
-            1024, #size
-            samp_rate, #samp_rate
-            'PLL Phase Error Output', #name
-            1 #number of inputs
-        )
-        self.qtgui_time_sink_x_0.set_update_time(0.10)
-        self.qtgui_time_sink_x_0.set_y_axis(-1, 1)
-
-        self.qtgui_time_sink_x_0.set_y_label('Amplitude', 'Time')
-
-        self.qtgui_time_sink_x_0.enable_tags(True)
-        self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, 0, "")
-        self.qtgui_time_sink_x_0.enable_autoscale(True)
-        self.qtgui_time_sink_x_0.enable_grid(True)
-        self.qtgui_time_sink_x_0.enable_axis_labels(True)
-        self.qtgui_time_sink_x_0.enable_control_panel(True)
-        self.qtgui_time_sink_x_0.enable_stem_plot(False)
-
-
-        labels = ['Frequency', 'Phase Error', '', '', '',
-            '', '', '', '', '']
-        widths = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-        colors = ['blue', 'red', 'green', 'black', 'cyan',
-            'magenta', 'yellow', 'dark red', 'dark green', 'dark blue']
-        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-            1.0, 1.0, 1.0, 1.0, 1.0]
-        styles = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-        markers = [-1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1]
-
-
-        for i in range(1):
-            if len(labels[i]) == 0:
-                self.qtgui_time_sink_x_0.set_line_label(i, "Data {0}".format(i))
-            else:
-                self.qtgui_time_sink_x_0.set_line_label(i, labels[i])
-            self.qtgui_time_sink_x_0.set_line_width(i, widths[i])
-            self.qtgui_time_sink_x_0.set_line_color(i, colors[i])
-            self.qtgui_time_sink_x_0.set_line_style(i, styles[i])
-            self.qtgui_time_sink_x_0.set_line_marker(i, markers[i])
-            self.qtgui_time_sink_x_0.set_line_alpha(i, alphas[i])
-
-        self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
-        self.top_grid_layout.addWidget(self._qtgui_time_sink_x_0_win, 4, 0, 1, 3)
-        for r in range(4, 5):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(0, 3):
-            self.top_grid_layout.setColumnStretch(c, 1)
-        self.qtgui_number_sink_0 = qtgui.number_sink(
-            gr.sizeof_float,
-            0,
-            qtgui.NUM_GRAPH_HORIZ,
-            1
-        )
-        self.qtgui_number_sink_0.set_update_time(0.10)
-        self.qtgui_number_sink_0.set_title('PLL Frequency Output')
-
-        labels = ['Freq', '', '', '', '',
-            '', '', '', '', '']
-        units = ['', '', '', '', '',
-            '', '', '', '', '']
-        colors = [("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"),
-            ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black")]
-        factor = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-
-        for i in range(1):
-            self.qtgui_number_sink_0.set_min(i, -1)
-            self.qtgui_number_sink_0.set_max(i, 1)
-            self.qtgui_number_sink_0.set_color(i, colors[i][0], colors[i][1])
-            if len(labels[i]) == 0:
-                self.qtgui_number_sink_0.set_label(i, "Data {0}".format(i))
-            else:
-                self.qtgui_number_sink_0.set_label(i, labels[i])
-            self.qtgui_number_sink_0.set_unit(i, units[i])
-            self.qtgui_number_sink_0.set_factor(i, factor[i])
-
-        self.qtgui_number_sink_0.enable_autoscale(True)
-        self._qtgui_number_sink_0_win = sip.wrapinstance(self.qtgui_number_sink_0.pyqwidget(), Qt.QWidget)
-        self.top_grid_layout.addWidget(self._qtgui_number_sink_0_win, 5, 0, 1, 3)
-        for r in range(5, 6):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(0, 3):
-            self.top_grid_layout.setColumnStretch(c, 1)
-        self.qtgui_freq_sink_x_0_1 = qtgui.freq_sink_c(
-            1024*4, #size
+        self.qtgui_freq_sink_x_0_0 = qtgui.freq_sink_c(
+            1024 , #size
             firdes.WIN_BLACKMAN_hARRIS, #wintype
             0, #fc
             samp_rate, #bw
-            'Coherent Phase Modulator Output', #name
+            'Output Signal Spectrum', #name
             1
         )
-        self.qtgui_freq_sink_x_0_1.set_update_time(0.10)
-        self.qtgui_freq_sink_x_0_1.set_y_axis(-140, 10)
-        self.qtgui_freq_sink_x_0_1.set_y_label('Relative Gain', 'dB')
-        self.qtgui_freq_sink_x_0_1.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
-        self.qtgui_freq_sink_x_0_1.enable_autoscale(True)
-        self.qtgui_freq_sink_x_0_1.enable_grid(True)
-        self.qtgui_freq_sink_x_0_1.set_fft_average(1.0)
-        self.qtgui_freq_sink_x_0_1.enable_axis_labels(True)
-        self.qtgui_freq_sink_x_0_1.enable_control_panel(True)
+        self.qtgui_freq_sink_x_0_0.set_update_time(0.10)
+        self.qtgui_freq_sink_x_0_0.set_y_axis(-140, 10)
+        self.qtgui_freq_sink_x_0_0.set_y_label('Relative Gain', 'dB')
+        self.qtgui_freq_sink_x_0_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
+        self.qtgui_freq_sink_x_0_0.enable_autoscale(True)
+        self.qtgui_freq_sink_x_0_0.enable_grid(True)
+        self.qtgui_freq_sink_x_0_0.set_fft_average(1.0)
+        self.qtgui_freq_sink_x_0_0.enable_axis_labels(True)
+        self.qtgui_freq_sink_x_0_0.enable_control_panel(True)
 
 
 
@@ -314,79 +222,54 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
 
         for i in range(1):
             if len(labels[i]) == 0:
-                self.qtgui_freq_sink_x_0_1.set_line_label(i, "Data {0}".format(i))
+                self.qtgui_freq_sink_x_0_0.set_line_label(i, "Data {0}".format(i))
             else:
-                self.qtgui_freq_sink_x_0_1.set_line_label(i, labels[i])
-            self.qtgui_freq_sink_x_0_1.set_line_width(i, widths[i])
-            self.qtgui_freq_sink_x_0_1.set_line_color(i, colors[i])
-            self.qtgui_freq_sink_x_0_1.set_line_alpha(i, alphas[i])
+                self.qtgui_freq_sink_x_0_0.set_line_label(i, labels[i])
+            self.qtgui_freq_sink_x_0_0.set_line_width(i, widths[i])
+            self.qtgui_freq_sink_x_0_0.set_line_color(i, colors[i])
+            self.qtgui_freq_sink_x_0_0.set_line_alpha(i, alphas[i])
 
-        self._qtgui_freq_sink_x_0_1_win = sip.wrapinstance(self.qtgui_freq_sink_x_0_1.pyqwidget(), Qt.QWidget)
-        self.top_grid_layout.addWidget(self._qtgui_freq_sink_x_0_1_win, 6, 0, 2, 3)
-        for r in range(6, 8):
+        self._qtgui_freq_sink_x_0_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0_0.pyqwidget(), Qt.QWidget)
+        self.top_grid_layout.addWidget(self._qtgui_freq_sink_x_0_0_win, 7, 0, 2, 3)
+        for r in range(7, 9):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(0, 3):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self.qtgui_freq_sink_x_0 = qtgui.freq_sink_c(
-            1024*4, #size
-            firdes.WIN_BLACKMAN_hARRIS, #wintype
-            0, #fc
-            samp_rate, #bw
-            'Input Signal Spectrum', #name
-            1
-        )
-        self.qtgui_freq_sink_x_0.set_update_time(0.10)
-        self.qtgui_freq_sink_x_0.set_y_axis(-140, 10)
-        self.qtgui_freq_sink_x_0.set_y_label('Relative Gain', 'dB')
-        self.qtgui_freq_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
-        self.qtgui_freq_sink_x_0.enable_autoscale(True)
-        self.qtgui_freq_sink_x_0.enable_grid(True)
-        self.qtgui_freq_sink_x_0.set_fft_average(1.0)
-        self.qtgui_freq_sink_x_0.enable_axis_labels(True)
-        self.qtgui_freq_sink_x_0.enable_control_panel(True)
-
-
-
-        labels = ['', '', '', '', '',
-            '', '', '', '', '']
-        widths = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-        colors = ["blue", "red", "green", "black", "cyan",
-            "magenta", "yellow", "dark red", "dark green", "dark blue"]
-        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-            1.0, 1.0, 1.0, 1.0, 1.0]
-
-        for i in range(1):
-            if len(labels[i]) == 0:
-                self.qtgui_freq_sink_x_0.set_line_label(i, "Data {0}".format(i))
-            else:
-                self.qtgui_freq_sink_x_0.set_line_label(i, labels[i])
-            self.qtgui_freq_sink_x_0.set_line_width(i, widths[i])
-            self.qtgui_freq_sink_x_0.set_line_color(i, colors[i])
-            self.qtgui_freq_sink_x_0.set_line_alpha(i, alphas[i])
-
-        self._qtgui_freq_sink_x_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0.pyqwidget(), Qt.QWidget)
-        self.top_grid_layout.addWidget(self._qtgui_freq_sink_x_0_win, 2, 0, 2, 3)
-        for r in range(2, 4):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(0, 3):
-            self.top_grid_layout.setColumnStretch(c, 1)
+        self.low_pass_filter_0 = filter.fir_filter_fff(
+            1,
+            firdes.low_pass(
+                1,
+                samp_rate,
+                cof,
+                10,
+                firdes.WIN_HAMMING,
+                6.76))
+        self.flaress_selector_0 = flaress.selector(gr.sizeof_char*1, 0, 2, 1)
         self.ecss_signal_search_fft_hier_0 = ecss.signal_search_fft_hier(ss, 1024*16, 1, False, firdes.WIN_BLACKMAN_hARRIS, 10000, 5000, 100.0, 10.0, samp_rate)
         self.ecss_pll_0 = ecss.pll(samp_rate, order, n_bit, coeff, 10000, 5000)
+        self.ecss_phase_converter_0 = ecss.phase_converter(n_bit)
+        self.ecss_modulator_0 = ecss.modulator(7, 2, [79,-109], 0, False, samp_rate, bit_rate, 1, 0, 0, 0.35,  int(samp_rate/11), True, 16000)
         self.ecss_gain_phase_accumulator_0 = ecss.gain_phase_accumulator(reset, 221, 240)
         self.ecss_coherent_phase_modulator_0 = ecss.coherent_phase_modulator(n_bit, 1)
         self.ecss_agc_0 = ecss.agc(10.0, 1.0, 1.0, 65536.0, samp_rate)
         self.channels_channel_model_0 = channels.channel_model(
-            noise_voltage=noise,
-            frequency_offset=freq_offset,
+            noise_voltage=0,
+            frequency_offset=0,
             epsilon=1.0,
             taps=[1.0 + 1.0j],
             noise_seed=0,
             block_tags=False)
-        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
-        self.blocks_tag_debug_0 = blocks.tag_debug(gr.sizeof_gr_complex*1, '', "")
-        self.blocks_tag_debug_0.set_display(True)
+        self.blocks_unpack_k_bits_bb_0 = blocks.unpack_k_bits_bb(8)
+        self.blocks_throttle_0_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
+        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_char*1, samp_rate/8/2,True)
+        self.blocks_null_sink_3 = blocks.null_sink(gr.sizeof_float*1)
+        self.blocks_null_sink_2 = blocks.null_sink(gr.sizeof_float*1)
+        self.blocks_null_sink_1 = blocks.null_sink(gr.sizeof_gr_complex*1)
         self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_gr_complex*1)
+        self.blocks_file_source_0_0 = blocks.file_source(gr.sizeof_char*1, '/data/andrej/git/esa/Flowgraphs/files/Convolutionally_encoded_CADU.bin', True, 0, 0)
+        self.blocks_file_source_0_0.set_begin_tag(pmt.PMT_NIL)
+        self.blocks_file_source_0 = blocks.file_source(gr.sizeof_char*1, '/data/andrej/git/esa/Flowgraphs/files/CADU.bin', True, 0, 0)
+        self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
         self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 12000, 1, 0, 0)
 
 
@@ -394,22 +277,29 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_throttle_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.channels_channel_model_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.qtgui_freq_sink_x_0, 0))
+        self.msg_connect((self.ecss_phase_converter_0, 'async_out'), (self.ecss_coherent_phase_modulator_0, 'async_in'))
+        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_throttle_0_0, 0))
+        self.connect((self.blocks_file_source_0, 0), (self.flaress_selector_0, 0))
+        self.connect((self.blocks_file_source_0_0, 0), (self.flaress_selector_0, 1))
+        self.connect((self.blocks_throttle_0, 0), (self.blocks_unpack_k_bits_bb_0, 0))
+        self.connect((self.blocks_throttle_0_0, 0), (self.channels_channel_model_0, 0))
+        self.connect((self.blocks_unpack_k_bits_bb_0, 0), (self.ecss_modulator_0, 0))
         self.connect((self.channels_channel_model_0, 0), (self.ecss_agc_0, 0))
         self.connect((self.ecss_agc_0, 0), (self.ecss_signal_search_fft_hier_0, 0))
-        self.connect((self.ecss_coherent_phase_modulator_0, 0), (self.qtgui_freq_sink_x_0_1, 0))
+        self.connect((self.ecss_coherent_phase_modulator_0, 0), (self.qtgui_freq_sink_x_0_0, 0))
         self.connect((self.ecss_gain_phase_accumulator_0, 0), (self.ecss_coherent_phase_modulator_0, 0))
-        self.connect((self.ecss_pll_0, 0), (self.blocks_null_sink_0, 0))
+        self.connect((self.ecss_modulator_0, 0), (self.low_pass_filter_0, 0))
+        self.connect((self.ecss_phase_converter_0, 0), (self.blocks_null_sink_0, 0))
+        self.connect((self.ecss_pll_0, 0), (self.blocks_null_sink_1, 0))
+        self.connect((self.ecss_pll_0, 2), (self.blocks_null_sink_2, 0))
+        self.connect((self.ecss_pll_0, 1), (self.blocks_null_sink_3, 0))
         self.connect((self.ecss_pll_0, 3), (self.ecss_gain_phase_accumulator_0, 0))
-        self.connect((self.ecss_pll_0, 1), (self.qtgui_number_sink_0, 0))
-        self.connect((self.ecss_pll_0, 2), (self.qtgui_time_sink_x_0, 0))
-        self.connect((self.ecss_signal_search_fft_hier_0, 0), (self.blocks_tag_debug_0, 0))
         self.connect((self.ecss_signal_search_fft_hier_0, 0), (self.ecss_pll_0, 0))
+        self.connect((self.flaress_selector_0, 0), (self.blocks_throttle_0, 0))
+        self.connect((self.low_pass_filter_0, 0), (self.ecss_phase_converter_0, 0))
 
     def closeEvent(self, event):
-        self.settings = Qt.QSettings("GNU Radio", "flaress_coherency_test")
+        self.settings = Qt.QSettings("GNU Radio", "flaress_combined_test")
         self.settings.setValue("geometry", self.saveGeometry())
         event.accept()
 
@@ -419,10 +309,10 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
         self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
-        self.blocks_throttle_0.set_sample_rate(self.samp_rate)
-        self.qtgui_freq_sink_x_0.set_frequency_range(0, self.samp_rate)
-        self.qtgui_freq_sink_x_0_1.set_frequency_range(0, self.samp_rate)
-        self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
+        self.blocks_throttle_0.set_sample_rate(self.samp_rate/8/2)
+        self.blocks_throttle_0_0.set_sample_rate(self.samp_rate)
+        self.low_pass_filter_0.set_taps(firdes.low_pass(1, self.samp_rate, self.cof, 10, firdes.WIN_HAMMING, 6.76))
+        self.qtgui_freq_sink_x_0_0.set_frequency_range(0, self.samp_rate)
 
     def get_ss(self):
         return self.ss
@@ -431,12 +321,6 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
         self.ss = ss
         self._ss_callback(self.ss)
         self.ecss_signal_search_fft_hier_0.set_enable(self.ss)
-
-    def get_sps(self):
-        return self.sps
-
-    def set_sps(self, sps):
-        self.sps = sps
 
     def get_reset(self):
         return self.reset
@@ -454,25 +338,18 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
         self._order_callback(self.order)
         self.ecss_pll_0.set_order(self.order)
 
-    def get_noise(self):
-        return self.noise
-
-    def set_noise(self, noise):
-        self.noise = noise
-        self.channels_channel_model_0.set_noise_voltage(self.noise)
-
     def get_n_bit(self):
         return self.n_bit
 
     def set_n_bit(self, n_bit):
         self.n_bit = n_bit
 
-    def get_freq_offset(self):
-        return self.freq_offset
+    def get_cof(self):
+        return self.cof
 
-    def set_freq_offset(self, freq_offset):
-        self.freq_offset = freq_offset
-        self.channels_channel_model_0.set_frequency_offset(self.freq_offset)
+    def set_cof(self, cof):
+        self.cof = cof
+        self.low_pass_filter_0.set_taps(firdes.low_pass(1, self.samp_rate, self.cof, 10, firdes.WIN_HAMMING, 6.76))
 
     def get_coeff(self):
         return self.coeff
@@ -481,9 +358,15 @@ class flaress_coherency_test(gr.top_block, Qt.QWidget):
         self.coeff = coeff
         self.ecss_pll_0.set_coefficients(self.coeff)
 
+    def get_bit_rate(self):
+        return self.bit_rate
+
+    def set_bit_rate(self, bit_rate):
+        self.bit_rate = bit_rate
 
 
-def main(top_block_cls=flaress_coherency_test, options=None):
+
+def main(top_block_cls=flaress_combined_test, options=None):
 
     if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
         style = gr.prefs().get_string('qtgui', 'style', 'raster')
