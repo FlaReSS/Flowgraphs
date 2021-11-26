@@ -1,0 +1,661 @@
+options:
+  parameters:
+    author: Stefano Speretta
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: coherent_carrier_generation
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Coherent Carrier Generation
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [24, 8.0]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: coherency
+  id: variable_qtgui_chooser
+  parameters:
+    comment: ''
+    gui_hint: 3,1,1,1
+    label: Coherency
+    label0: Open Loop
+    label1: Coherent
+    label2: ''
+    label3: ''
+    label4: ''
+    labels: '[]'
+    num_opts: '2'
+    option0: '0'
+    option1: '1'
+    option2: '2'
+    option3: '3'
+    option4: '4'
+    options: '[0, 1, 2]'
+    orient: Qt.QHBoxLayout
+    type: int
+    value: '0'
+    widget: radio_buttons
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [608, 16.0]
+    rotation: 0
+    state: true
+- name: loop_filter_2nd_order
+  id: loop_filter
+  parameters:
+    alias: ''
+    comment: ''
+    damping: '0.707'
+    natural_freq: '800'
+    order: 2nd
+    samp_rate: samp_rate
+    t1: '0.01'
+    t2: '0.6'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [736, 16.0]
+    rotation: 0
+    state: true
+- name: loop_filter_3rd_order
+  id: loop_filter
+  parameters:
+    alias: ''
+    comment: ''
+    damping: '0.707'
+    natural_freq: '10'
+    order: 3rd
+    samp_rate: samp_rate
+    t1: '0.01'
+    t2: '0.0674'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [736, 108.0]
+    rotation: 0
+    state: true
+- name: loop_order_chooser
+  id: variable_qtgui_chooser
+  parameters:
+    comment: ''
+    gui_hint: 2,1,1,1
+    label: PLL Loop Order
+    label0: Second Order
+    label1: Third Order
+    label2: ''
+    label3: ''
+    label4: ''
+    labels: '[]'
+    num_opts: '2'
+    option0: loop_filter_2nd_order
+    option1: loop_filter_3rd_order
+    option2: '2'
+    option3: '3'
+    option4: '4'
+    options: '[0, 1, 2]'
+    orient: Qt.QHBoxLayout
+    type: raw
+    value: loop_filter_2nd_order
+    widget: radio_buttons
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [432, 16.0]
+    rotation: 0
+    state: true
+- name: modulation_coeff_down
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: 1,1,1,1
+    label: Downlink Modulation Coefficent
+    min_len: '200'
+    orient: Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.1'
+    stop: '1'
+    value: '0'
+    widget: counter
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 12.0]
+    rotation: 0
+    state: true
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '1000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: blocks_complex_to_float_2
+  id: blocks_complex_to_float
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1068.0, 288]
+    rotation: 270
+    state: enabled
+- name: blocks_file_source_0
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: ''
+    file: /Users/stefanosperett/Documents/Research/FlaReSS/GitHub/Flowgraphs/sw150kHz_swr10kHz-s_tc4kbps_mi1.0.dat
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'True'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [40, 244.0]
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [232, 532.0]
+    rotation: 180
+    state: enabled
+- name: blocks_multiply_const_vxx_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: modulation_coeff_down
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [928, 724.0]
+    rotation: 180
+    state: true
+- name: blocks_null_sink_0
+  id: blocks_null_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    bus_structure_sink: '[[0,],]'
+    comment: ''
+    num_inputs: '1'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [960, 316.0]
+    rotation: 0
+    state: true
+- name: blocks_null_sink_0_0
+  id: blocks_null_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    bus_structure_sink: '[[0,],]'
+    comment: ''
+    num_inputs: '1'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [960, 260.0]
+    rotation: 0
+    state: true
+- name: blocks_rms_xx_0
+  id: blocks_rms_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: '0.0001'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [672, 532.0]
+    rotation: 180
+    state: true
+- name: blocks_threshold_ff_0
+  id: blocks_threshold_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    high: '0.8'
+    init: '0'
+    low: '0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [664, 432.0]
+    rotation: 0
+    state: true
+- name: ecss_agc_xx_0
+  id: ecss_agc_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    initial_gain: '1.0'
+    maximum_gain: '65536.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    reference: '1.0'
+    samp_rate: samp_rate
+    settling_time: '10.0'
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1076.0, 552]
+    rotation: 270
+    state: true
+- name: ecss_agc_xx_0_0
+  id: ecss_agc_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    initial_gain: '1.0'
+    maximum_gain: '65536.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    reference: '1.0'
+    samp_rate: samp_rate
+    settling_time: '10.0'
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [504, 260.0]
+    rotation: 0
+    state: true
+- name: ecss_coherent_phase_modulator_0
+  id: ecss_coherent_phase_modulator
+  parameters:
+    N: '38'
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [232, 668.0]
+    rotation: 180
+    state: true
+- name: ecss_gain_phase_accumulator_0
+  id: ecss_gain_phase_accumulator
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    downlink: 440*coherency
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    rst: 'False'
+    uplink: '221'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [832, 616.0]
+    rotation: 180
+    state: enabled
+- name: ecss_phase_converter_0
+  id: ecss_phase_converter
+  parameters:
+    N: '38'
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [744, 708.0]
+    rotation: 180
+    state: true
+- name: ecss_pll_0
+  id: ecss_pll
+  parameters:
+    N: '38'
+    affinity: ''
+    alias: ''
+    bw: '0'
+    coefficients: loop_order_chooser
+    comment: ''
+    freq_central: '3000'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [712, 236.0]
+    rotation: 0
+    state: enabled
+- name: ecss_signal_search_goertzel_0
+  id: ecss_signal_search_goertzel
+  parameters:
+    affinity: ''
+    alias: ''
+    average: 'False'
+    bandwidth: '3000'
+    comment: ''
+    enable: 'True'
+    freq_central: '10000'
+    freq_cutoff: '3000'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    threshold: '10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 264.0]
+    rotation: 0
+    state: enabled
+- name: ecss_threshold_to_message_0
+  id: ecss_threshold_to_message
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    init_state: 'False'
+    lower_message: pmt.intern("UNLOCK")
+    lower_threshold: '0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    upper_message: pmt.intern("LOCK")
+    upper_threshold: '0.8'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [408, 508.0]
+    rotation: 180
+    state: true
+- name: flaress_add_0
+  id: flaress_add
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: s64
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [632, 660.0]
+    rotation: 180
+    state: enabled
+- name: qtgui_freq_sink_x_0
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '1024'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: 0,0,4,1
+    label: Relative Gain
+    label1: Input
+    label10: ''''''
+    label2: Output
+    label3: PLL
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '""'
+    nconnections: '2'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: firdes.WIN_BLACKMAN_hARRIS
+    ymax: '20'
+    ymin: '-90'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [32, 396.0]
+    rotation: 180
+    state: enabled
+- name: qtgui_number_sink_0
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_HORIZ
+    gui_hint: 0,1,1,1
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '1'
+    min: '0'
+    name: Lock
+    nconnections: '1'
+    type: float
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 424.0]
+    rotation: 0
+    state: true
+- name: single_pole_iir_filter_xx_0
+  id: single_pole_iir_filter_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: '0.0196'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [888, 532.0]
+    rotation: 180
+    state: enabled
+
+connections:
+- [blocks_complex_to_float_2, '0', single_pole_iir_filter_xx_0, '0']
+- [blocks_complex_to_float_2, '1', ecss_agc_xx_0, '0']
+- [blocks_file_source_0, '0', ecss_signal_search_goertzel_0, '0']
+- [blocks_file_source_0, '0', qtgui_freq_sink_x_0, '0']
+- [blocks_multiply_const_vxx_0, '0', ecss_phase_converter_0, '0']
+- [blocks_rms_xx_0, '0', blocks_threshold_ff_0, '0']
+- [blocks_rms_xx_0, '0', ecss_threshold_to_message_0, '0']
+- [blocks_threshold_ff_0, '0', qtgui_number_sink_0, '0']
+- [ecss_agc_xx_0, '0', blocks_multiply_const_vxx_0, '0']
+- [ecss_agc_xx_0_0, '0', ecss_pll_0, '0']
+- [ecss_coherent_phase_modulator_0, '0', qtgui_freq_sink_x_0, '1']
+- [ecss_gain_phase_accumulator_0, '0', flaress_add_0, '0']
+- [ecss_phase_converter_0, '0', flaress_add_0, '1']
+- [ecss_pll_0, '0', blocks_complex_to_float_2, '0']
+- [ecss_pll_0, '1', blocks_null_sink_0_0, '0']
+- [ecss_pll_0, '2', blocks_null_sink_0, '0']
+- [ecss_pll_0, '3', ecss_gain_phase_accumulator_0, '0']
+- [ecss_signal_search_goertzel_0, '0', ecss_agc_xx_0_0, '0']
+- [ecss_threshold_to_message_0, threshold_msg, blocks_message_debug_0, print]
+- [ecss_threshold_to_message_0, threshold_msg, ecss_signal_search_goertzel_0, lock_in]
+- [flaress_add_0, '0', ecss_coherent_phase_modulator_0, '0']
+- [single_pole_iir_filter_xx_0, '0', blocks_rms_xx_0, '0']
+
+metadata:
+  file_format: 1
